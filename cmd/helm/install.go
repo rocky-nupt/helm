@@ -118,6 +118,7 @@ type installCmd struct {
 	wait         bool
 	repoURL      string
 	devel        bool
+	depUp        bool
 
 	certFile string
 	keyFile  string
@@ -193,6 +194,7 @@ func newInstallCmd(c helm.Interface, out io.Writer) *cobra.Command {
 	f.StringVar(&inst.keyFile, "key-file", "", "identify HTTPS client using this SSL key file")
 	f.StringVar(&inst.caFile, "ca-file", "", "verify certificates of HTTPS-enabled servers using this CA bundle")
 	f.BoolVar(&inst.devel, "devel", false, "use development versions, too. Equivalent to version '>0.0.0-a'. If --version is set, this is ignored.")
+	f.BoolVar(&inst.depUp, "dep-up", false, "automatically execute helm dep up when charts are in requirements.yaml but not in charts.")
 
 	return cmd
 }
@@ -230,7 +232,22 @@ func (i *installCmd) run() error {
 		// As of Helm 2.4.0, this is treated as a stopping condition:
 		// https://github.com/kubernetes/helm/issues/2209
 		if err := checkDependencies(chartRequested, req); err != nil {
-			return prettyError(err)
+			if i.depUp {
+				man := &downloader.Manager{
+					Out:        i.out,
+					ChartPath:  i.chartPath,
+					HelmHome:   settings.Home,
+					Keyring:    defaultKeyring(),
+					SkipUpdate: false,
+					Getters:    getter.All(settings),
+				}
+				if err := man.Update(); err != nil {
+					return prettyError(err)
+				}
+			} else {
+				return prettyError(err)
+			}
+
 		}
 	} else if err != chartutil.ErrRequirementsNotFound {
 		return fmt.Errorf("cannot load requirements: %v", err)

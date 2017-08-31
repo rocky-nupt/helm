@@ -70,6 +70,7 @@ helm install [CHART]
 ```
       --ca-file string         verify certificates of HTTPS-enabled servers using this CA bundle
       --cert-file string       identify HTTPS client using this SSL certificate file
+      --dep-up                 automatically execute helm dep up when charts are in requirements.yaml but not in charts.
       --devel                  use development versions, too. Equivalent to version '>0.0.0-a'. If --version is set, this is ignored.
       --dry-run                simulate an install
       --key-file string        identify HTTPS client using this SSL key file
